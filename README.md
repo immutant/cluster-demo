@@ -1,6 +1,10 @@
 # cluster-tutorial
 
-An app patterned after the [Immutant clustering tutorial](http://immutant.org/tutorials/clustering/)
+An app patterned after the
+[Immutant clustering tutorial](http://immutant.org/tutorials/clustering/)
+
+For convenience, all the code is in the bootstrap file,
+`src/immutant/init.clj`
 
 ## Usage
 
