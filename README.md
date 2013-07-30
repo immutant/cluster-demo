@@ -1,13 +1,13 @@
 # cluster-tutorial
 
-A Clojure library designed to ... well, that part is up to you.
+An app patterned after the [Immutant clustering tutorial](http://immutant.org/tutorials/clustering/)
 
 ## Usage
 
-FIXME
+    $ lein immutant deploy
 
 ## License
 
-Copyright © 2013 FIXME
+Copyright © 2013 Jim Crossley
 
 Distributed under the Eclipse Public License, the same as Clojure.
