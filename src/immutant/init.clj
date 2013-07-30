@@ -1,11 +1,11 @@
 (ns immutant.init
-  (:require immutant.web
-            [immutant.cache     :as cache]
+  (:require [immutant.cache     :as cache]
             [immutant.messaging :as messaging]
-            [immutant.daemons   :as daemon])
-  (:use [ring.middleware.resource :only [wrap-resource]]
-        [ring.util.response :only [response]]
-        [clojure.pprint :only [pprint]]))
+            [immutant.daemons   :as daemon]
+            [immutant.jobs      :as job]
+            [immutant.web       :as web])
+  (:use [ring.util.response :only [response]])
+  (:import java.util.Date))
 
 ;;; Create a message queue
 (messaging/start "/queue/msg")
@@ -36,9 +36,14 @@
 ;;; Register the daemon
 (daemon/daemonize "counter" start stop)
 
+;;; Our web request handler
 (defn handler [request]
   (let [v (:value cache)]
     (println (format "web [%s]: %s" (:path-info request) v))
     (response (format "Cached value: %s" v))))
 
-(immutant.web/start handler)
+;;; Mount the handler at our app's root context
+(web/start handler)
+
+;;; For completeness, schedule a singleton job named "ajob"
+(jobs/schedule "ajob" #(println "job:" (Date.)) :every [20 :seconds])
