@@ -23,11 +23,11 @@
 (defn start []
   (reset! done false)
   (while (not @done)
-    (Thread/sleep 5000)
     (let [i (:value cache 1)]
       (println "sending:" i)
       (messaging/publish "/queue/msg" i)
-      (cache/put cache :value (inc i)))))
+      (cache/put cache :value (inc i))
+      (Thread/sleep 5000))))
 
 ;;; Our daemon's stop function
 (defn stop []
