@@ -46,4 +46,4 @@
 (web/start handler)
 
 ;;; For completeness, schedule a singleton job named "ajob"
-;; (job/schedule "ajob" #(println "job:" (Date.)) :every [20 :seconds])
+(job/schedule "ajob" #(println "job:" (Date.)) :every [20 :seconds])
