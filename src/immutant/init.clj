@@ -4,14 +4,13 @@
             [immutant.daemons   :as daemon]
             [immutant.jobs      :as job]
             [immutant.web       :as web])
-  (:use [ring.util.response :only [response]])
-  (:import java.util.Date))
+  (:use [ring.util.response :only [response]]))
 
 ;;; Create a message queue
 (messaging/start "/queue/msg")
 
 ;;; Define a consumer for our queue
-(def listener (messaging/listen "/queue/msg" #(println "received:" %)))
+(def listener (messaging/listen "/queue/msg" #(println "listener:" %)))
 
 ;;; Create a distributed cache to hold our counter value
 (def cache (cache/lookup-or-create "counters"))
@@ -23,10 +22,12 @@
 (defn start []
   (reset! done false)
   (while (not @done)
-    (let [i (:value cache 1)]
-      (println "sending:" i)
-      (messaging/publish "/queue/msg" i)
-      (cache/put cache :value (inc i))
+    (let [i (:daemon cache 1)]
+      (println "daemon:" i)
+      (try
+        (messaging/publish "/queue/msg" i)
+        (cache/put cache :daemon (inc i))
+        (catch Throwable e (println "Not expecting this!" e)))
       (Thread/sleep 5000))))
 
 ;;; Our daemon's stop function
@@ -38,12 +39,15 @@
 
 ;;; Our web request handler
 (defn handler [request]
-  (let [v (:value cache)]
-    (println (format "web [%s]: %s" (:path-info request) v))
-    (response (format "Cached value: %s" v))))
+  (println (format "web [%s]: %s" (:path-info request) cache))
+  (response (format "daemon=%s, job=%s\n" (:daemon cache) (:job cache))))
 
 ;;; Mount the handler at our app's root context
 (web/start handler)
 
 ;;; For completeness, schedule a singleton job named "ajob"
-(job/schedule "ajob" #(println "job:" (Date.)) :every [20 :seconds])
+(job/schedule "ajob"
+              #(let [i (:job cache 1)]
+                 (println "job:" i)
+                 (cache/put cache :job (inc i)))
+              :every [20 :seconds])
