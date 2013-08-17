@@ -1,53 +1,53 @@
 (ns immutant.init
   (:require [immutant.cache     :as cache]
-            [immutant.messaging :as messaging]
+            [immutant.messaging :as msg]
             [immutant.daemons   :as daemon]
             [immutant.jobs      :as job]
             [immutant.web       :as web])
   (:use [ring.util.response :only [response]]))
 
 ;;; Create a message queue
-(messaging/start "/queue/msg")
+(msg/start "/queue/msg")
 
-;;; Define a consumer for our queue
-(def listener (messaging/listen "/queue/msg" #(println "listener:" %)))
-
-;;; Create a distributed cache to hold our counter value
+;;; Create a distributed cache to hold our counters
 (def cache (cache/lookup-or-create "counters"))
 
-;;; Controls the state of our daemon
-(def done (atom false))
+;;; Define a consumer for our queue
+(def listener (msg/listen "/queue/msg" #(println (format "recv %s, %s" % cache))))
 
-;;; Our daemon's start function
-(defn start []
-  (reset! done false)
-  (while (not @done)
-    (let [i (:daemon cache 1)]
-      (println "daemon:" i)
-      (try
-        (messaging/publish "/queue/msg" i)
-        (cache/put cache :daemon (inc i))
-        (catch Throwable e (println "Not expecting this!" e)))
-      (Thread/sleep 5000))))
+;;; Our singleton daemon
+(let [done (atom false)]
 
-;;; Our daemon's stop function
-(defn stop []
-  (reset! done true))
+  ;; Our daemon's start function
+  (defn start []
+    (reset! done false)
+    (while (not @done)
+      (let [i (:messages cache 1)]
+        (println "send" i)
+        (try
+          (msg/publish "/queue/msg" i)
+          (cache/put cache :messages (inc i))
+          (catch Throwable e (println "Not expecting this!" e)))
+        (Thread/sleep 5000))))
 
-;;; Register the daemon
-(daemon/daemonize "counter" start stop)
+  ;; Our daemon's stop function
+  (defn stop []
+    (reset! done true))
+
+  ;; Register our daemon
+  (daemon/daemonize "counter" start stop))
 
 ;;; Our web request handler
 (defn handler [request]
-  (println (format "web [%s]: %s" (:path-info request) cache))
-  (response (format "daemon=%s, job=%s\n" (:daemon cache) (:job cache))))
+  (println (format "web [%s]" (:path-info request)))
+  (response (format "messages=%s, jobs=%s\n" (:messages cache) (:jobs cache))))
 
 ;;; Mount the handler at our app's root context
 (web/start handler)
 
-;;; For completeness, schedule a singleton job named "ajob"
+;;; Schedule a singleton job named "ajob"
 (job/schedule "ajob"
-              #(let [i (:job cache 1)]
-                 (println "job:" i)
-                 (cache/put cache :job (inc i)))
+              #(let [i (:jobs cache 1)]
+                 (println "job" i)
+                 (cache/put cache :jobs (inc i)))
               :every [20 :seconds])
