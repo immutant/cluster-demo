@@ -1,4 +1,4 @@
-# Immutant Clustering features
+# Immutant clustering features
 
 This app shows off the features of an Immutant cluster, specifically:
 
@@ -22,8 +22,13 @@ automatically.
 
 ## Usage
 
+Form a cluster of Immutants by running the following on each node:
+
+    $ lein immutant run --clustered
+
+Deploy the app to each Immutant
+
     $ lein immutant deploy
-    $ lein immutant run
 
 ## License
 
