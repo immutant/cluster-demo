@@ -5,7 +5,7 @@ This app shows off the features of an Immutant cluster, specifically:
 * Load-balanced messaging with automatic peer discovery
 * HA singleton daemons 
 * HA singleton jobs
-* Cache replication
+* Cache and web session replication
 
 All the code is in `src/immutant/init.clj`. A simple web app is
 included that returns the contents of the distributed cache. When
