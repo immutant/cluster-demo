@@ -54,11 +54,11 @@
 (web/start handler)
 
 ;;; A handler to increment a counter in the web session
-(defn count [{session :session}]
+(defn incrementer [{session :session}]
   (let [count (:count session 1)
         session (assoc session :count (inc count))]
     (println (format "count=%s" count))
     (-> (response (str "You accessed this page " count " times\n"))
         (assoc :session session))))
 ;;; Use Immutant's session store for automatic replication
-(web/start "/count" (wrap-session #'count {:store (servlet-store)}))
+(web/start "/count" (wrap-session #'incrementer {:store (servlet-store)}))
